@@ -17,7 +17,9 @@ namespace exercise.webapi.Endpoints
             app.MapGet("/{id:int}", GetBookById);
             app.MapPut("/{bookId:int}/author/{authorId:int}", UpdateBook);
             app.MapDelete("/{id:int}", DeleteBook);
-            app.MapPost("/{book}/author/{author}", CreateBook);
+            app.MapPost("/{Title:string}/id/{id:int}", CreateBook);
+            app.MapPut("/{bookId:int}/assign-author/{authorId:int}", AssignAuthor);
+            app.MapPut("/{bookId:int}", RemoveAuthor);
         }
 
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -81,6 +83,22 @@ namespace exercise.webapi.Endpoints
             var dto = created.ConvertBookDTO();
 
             return TypedResults.Created($"/books/{dto.Id}");
+        }
+
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        private static async Task<IResult> AssignAuthor(int bookId, int authorId, IBookRepository bookRepository)
+        {
+            var book = await bookRepository.AssignAuthor(bookId, authorId);
+            var dto = book.ConvertBookDTO();
+            return TypedResults.Ok(dto);
+        }
+
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        private static async Task<IResult> RemoveAuthor(int bookId, IBookRepository bookRepository)
+        {
+            var book = await bookRepository.RemoveAuthor(bookId);
+            var dto = book.ConvertBookDTO;
+            return TypedResults.Ok(dto);
         }
     }
 }

@@ -58,5 +58,23 @@ namespace exercise.webapi.Repository
             await _db.SaveChangesAsync();
             return await GetBookById(book.Id);
         }
+
+        public async Task<Book> AssignAuthor(int bookId, int authorId)
+        {
+            var book = await GetBookById(bookId);
+
+            book.AuthorId = authorId;
+            await _db.SaveChangesAsync();
+            return await GetBookById(bookId);
+        }
+
+        public async Task<Book> RemoveAuthor(int bookId)
+        {
+            var book = await GetBookById(bookId);
+
+            book.AuthorId = null;
+            await _db.SaveChangesAsync();
+            return await GetBookById(bookId);
+        }
     }
 }
