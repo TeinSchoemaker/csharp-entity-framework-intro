@@ -18,7 +18,7 @@ namespace exercise.webapi.Repository
             return await _db.Books.Include(b => b.Author).ToListAsync();
         }
 
-        public async Task<Book> GetBook(int id)
+        public async Task<Book> GetBookById(int id)
         {
             var book = _db.Books.Include(b => b.Author)
                 .FirstOrDefaultAsync(b => b.Id == id);
@@ -26,17 +26,17 @@ namespace exercise.webapi.Repository
             return await book;
         }
 
-        public async Task<Book> UpdateBook(Book book, Author author)
+        public async Task<Book> UpdateBook(int bookId, int authorId)
         {
-            var bookID = await _db.Books.Include(b => b.Author)
-                .FirstOrDefaultAsync(b => b.Id == book.Id);
-            var authorID = await _db.Authors.FindAsync(author.Id);
+            var book = await _db.Books.Include(b => b.Author)
+                .FirstOrDefaultAsync(b => b.Id == bookId);
+            var author = await _db.Authors.FindAsync(authorId);
 
-            book.AuthorId = author.Id;
+            book.AuthorId = authorId;
             await _db.SaveChangesAsync();
 
             var updated = _db.Books.Include(b => b.Author)
-                .FirstOrDefaultAsync(b => b.Id == book.Id);
+                .FirstOrDefaultAsync(b => b.Id == bookId);
 
             return await updated;
         }
@@ -47,20 +47,16 @@ namespace exercise.webapi.Repository
                 .FirstOrDefaultAsync(b => b.Id == id);
 
             _db.Books.Remove(target);
+            await _db.SaveChangesAsync();
 
             return target;
         }
 
         public async Task<Book> CreateBook(Book book)
         {
-            var author = _db.Authors.FindAsync(book.AuthorId);
-
-            await _db.Books.AddAsync(book);
+            _db.Books.Add(book);
             await _db.SaveChangesAsync();
-
-            var created = _db.Books.Include(b => b.Author)
-                .FirstOrDefaultAsync(b => b.Id == book.Id);
-            return await created;
+            return await GetBookById(book.Id);
         }
     }
 }

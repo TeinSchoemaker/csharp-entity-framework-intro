@@ -15,9 +15,9 @@ namespace exercise.webapi.Endpoints
 
             app.MapGet("/", GetBooks);
             app.MapGet("/{id:int}", GetBookById);
-            app.MapPut("/{book}/author/{author}", UpdateBook);
-            app.MapPut("/{id:int}", DeleteBook);
-            app.MapPut("/{book}/author/{author}", CreateBook);
+            app.MapPut("/{bookId:int}/author/{authorId:int}", UpdateBook);
+            app.MapDelete("/{id:int}", DeleteBook);
+            app.MapPost("/{book}/author/{author}", CreateBook);
         }
 
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -25,18 +25,7 @@ namespace exercise.webapi.Endpoints
         {
             var books = await bookRepository.GetAllBooks();
 
-            var dto = books.Select(b => new BookDTO
-            {
-                Id = b.Id,
-                Title = b.Title,
-                Author = new AuthorDTO
-                {
-                    Id = b.Author.Id,
-                    FirstName = b.Author.FirstName,
-                    LastName = b.Author.LastName,
-                    Email = b.Author.Email
-                }
-            });
+            var dto = books.Select(b => b.ConvertBookDTO());
 
             return TypedResults.Ok(dto);
         }
@@ -44,43 +33,54 @@ namespace exercise.webapi.Endpoints
         [ProducesResponseType(StatusCodes.Status200OK)]
         private static async Task<IResult> GetBookById(int id, IBookRepository bookRepository)
         {
-            var book = await bookRepository.GetBook(id);
-            return TypedResults.Ok(book);
+            var book = await bookRepository.GetBookById(id);
+            var dto = book.ConvertBookDTO();
+            return TypedResults.Ok(dto);
         }
         
         [ProducesResponseType(StatusCodes.Status200OK)]
-        private static async Task<IResult> UpdateBook(Book book, Author author, IBookRepository bookRepository)
+        private static async Task<IResult> UpdateBook(int bookId, int authorId, IBookRepository bookRepository)
         {
-            var updated = await bookRepository.UpdateBook(book, author);
-
-            return TypedResults.Ok(updated);
+            var updated = await bookRepository.UpdateBook(bookId, authorId);
+            var dto = updated.ConvertBookDTO();
+            return TypedResults.Ok(dto);
         }
 
         [ProducesResponseType(StatusCodes.Status200OK)]
         private static async Task<IResult> DeleteBook(int id, IBookRepository bookRepository)
         {
             var book = await bookRepository.DeleteBook(id);
-            return TypedResults.Ok(book);
+            var dto = book.ConvertBookDTO();
+            return TypedResults.Ok(dto);
         }
 
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        private static async Task<IResult> CreateBook(Book book, IBookRepository bookRepository)
+        private static async Task<IResult> CreateBook(string title, int id, IBookRepository bookRepository)
         {
 
-            if (book.AuthorId <= 0)
+            if (id <= 0)
             {
                 return TypedResults.NotFound("Author ID is not valid");
             }
 
-            var created = await bookRepository.CreateBook(book);
+            var newBook = new Book
+            {
+                Title = title,
+                AuthorId = id,
+            };
+
+            var created = await bookRepository.CreateBook(newBook);
+
             if (created == null)
             {
                 return TypedResults.BadRequest("Book Object not valid");
             }
 
-            return TypedResults.Ok(created);
+            var dto = created.ConvertBookDTO();
+
+            return TypedResults.Created($"/books/{dto.Id}");
         }
     }
 }
