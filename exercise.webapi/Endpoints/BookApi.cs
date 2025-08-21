@@ -1,5 +1,6 @@
 ﻿using exercise.webapi.Models;
 using exercise.webapi.Repository;
+using exercise.webapi.DTO;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.NetworkInformation;
 using static System.Reflection.Metadata.BlobBuilder;
@@ -23,7 +24,21 @@ namespace exercise.webapi.Endpoints
         private static async Task<IResult> GetBooks(IBookRepository bookRepository)
         {
             var books = await bookRepository.GetAllBooks();
-            return TypedResults.Ok(books);
+
+            var dto = books.Select(b => new BookDTO
+            {
+                Id = b.Id,
+                Title = b.Title,
+                Author = new AuthorDTO
+                {
+                    Id = b.Author.Id,
+                    FirstName = b.Author.FirstName,
+                    LastName = b.Author.LastName,
+                    Email = b.Author.Email
+                }
+            });
+
+            return TypedResults.Ok(dto);
         }
 
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -32,7 +47,7 @@ namespace exercise.webapi.Endpoints
             var book = await bookRepository.GetBook(id);
             return TypedResults.Ok(book);
         }
-
+        
         [ProducesResponseType(StatusCodes.Status200OK)]
         private static async Task<IResult> UpdateBook(Book book, Author author, IBookRepository bookRepository)
         {
